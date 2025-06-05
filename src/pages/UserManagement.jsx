@@ -1,51 +1,48 @@
-import { User, UserPlus, UserX, UserCheck, Search } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { useEffect, useState } from "react"
+import {
+  User, UserPlus, UserX, UserCheck, Search,
+} from "lucide-react"
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 
 function UserManagement() {
-  const users = [
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john.smith@example.com",
-      role: "Administrator",
-      status: "Active",
-      lastActive: "10 minutes ago",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      role: "Security Analyst",
-      status: "Active",
-      lastActive: "2 hours ago",
-    },
-    {
-      id: 3,
-      name: "Michael Chen",
-      email: "m.chen@example.com",
-      role: "IT Support",
-      status: "Active",
-      lastActive: "1 day ago",
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "e.davis@example.com",
-      role: "Security Analyst",
-      status: "Inactive",
-      lastActive: "5 days ago",
-    },
-    {
-      id: 5,
-      name: "Robert Wilson",
-      email: "r.wilson@example.com",
-      role: "IT Manager",
-      status: "Active",
-      lastActive: "3 hours ago",
-    },
-  ]
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("access_token")
+        if (!token) {
+          throw new Error("No token found")
+        }
+
+        const response = await fetch("http://127.0.0.1:8000/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.detail || "Failed to fetch users")
+        }
+
+        const data = await response.json()
+        setUsers(data)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
 
   return (
     <div className="flex-1 p-6 bg-gray-950 overflow-auto">
@@ -92,75 +89,81 @@ function UserManagement() {
             <CardDescription className="text-gray-400">Manage system users and permissions</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Last Active
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-b border-gray-800 last:border-0">
-                      <td className="px-4 py-4">
-                        <div className="flex items-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-cyan-400">
-                            <User className="h-5 w-5" />
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-white">{user.name}</p>
-                            <p className="text-xs text-gray-400">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-300">{user.role}</td>
-                      <td className="px-4 py-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            user.status === "Active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                          }`}
-                        >
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-400">{user.lastActive}</td>
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 border-gray-700 text-red-400 hover:bg-red-900/20 hover:text-red-300"
-                          >
-                            Disable
-                          </Button>
-                        </div>
-                      </td>
+            {loading ? (
+              <p className="text-gray-400 p-4">Loading users...</p>
+            ) : error ? (
+              <p className="text-red-500 p-4">Error: {error}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Dashboard
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {users.map((user, idx) => (
+                      <tr key={idx} className="border-b border-gray-800 last:border-0">
+                        <td className="px-4 py-4">
+                          <div className="flex items-center">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-cyan-400">
+                              <User className="h-5 w-5" />
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-medium text-white">{`${user.first_name} ${user.last_name}`}</p>
+                              <p className="text-xs text-gray-400">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-300">{user.role}</td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              user.tfa_enabled ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                            }`}
+                          >
+                            {user.tfa_enabled ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-400">{user.dashboard_view || "N/A"}</td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 border-gray-700 text-red-400 hover:bg-red-900/20 hover:text-red-300"
+                            >
+                              Disable
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -169,4 +172,3 @@ function UserManagement() {
 }
 
 export default UserManagement
-

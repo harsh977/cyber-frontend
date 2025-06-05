@@ -12,38 +12,51 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
 function FuturisticCharts() {
+  const [attackVectorsData, setAttackVectorsData] = useState([])
+
   // Sample data for pie chart
   const securityLayersData = [
-    { name: "Network", value: 35 },
-    { name: "Application", value: 25 },
-    { name: "Data", value: 20 },
-    { name: "Endpoint", value: 15 },
-    { name: "Physical", value: 5 },
+    { name: "Patched", value: 36 },
+    { name: "Unpatched", value: 743 }
   ]
 
-  // Sample data for bar chart
-  const attackVectorsData = [
-    { vector: "Web App", attacks: 423, blocked: 410 },
-    { vector: "Email", attacks: 327, blocked: 320 },
-    { vector: "Network", attacks: 215, blocked: 205 },
-    { vector: "Social", attacks: 189, blocked: 175 },
-    { vector: "Physical", attacks: 87, blocked: 85 },
-  ]
+  // Fetch dynamic data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/cvss-scores-per-ip");
+        const data = await response.json();
 
-  // Colors for pie chart
+        const formattedData = Object.entries(data).map(([ip, scores]) => ({
+          vector: ip,
+          cvssV2: scores.average_cvss_v2 || 0,
+          cvssV3: scores.average_cvss_v3 || 0
+        }))
+
+        setAttackVectorsData(formattedData)
+      } catch (error) {
+        console.error("Failed to fetch CVSS data", error)
+      }
+    }
+
+    fetchData()
+  }, [])
+
   const COLORS = ["#8884d8", "#00C49F", "#FFBB28", "#FF8042", "#0088FE"]
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
+      {/* Pie chart */}
       <Card className="border-gray-800 bg-gray-900/50 shadow-lg shadow-purple-500/5 overflow-hidden">
         <CardHeader className="border-b border-gray-800">
           <CardTitle className="text-purple-400">Security Layer Distribution</CardTitle>
-          <CardDescription className="text-gray-400">Protection by security layer</CardDescription>
+          <CardDescription className="text-gray-400">Distribution of Patched vs Unpatched Systems</CardDescription>
         </CardHeader>
         <CardContent className="pt-6 relative">
-          {/* Futuristic background elements */}
           <div className="absolute inset-0 z-0">
             <div className="absolute top-1/2 left-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-purple-500/20"></div>
             <div className="absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-500/10"></div>
@@ -76,7 +89,6 @@ function FuturisticCharts() {
             </ResponsiveContainer>
           </div>
 
-          {/* Grid lines */}
           <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 grid grid-cols-4 grid-rows-4">
               {Array.from({ length: 16 }).map((_, i) => (
@@ -87,13 +99,13 @@ function FuturisticCharts() {
         </CardContent>
       </Card>
 
+      {/* Bar chart */}
       <Card className="border-gray-800 bg-gray-900/50 shadow-lg shadow-cyan-500/5 overflow-hidden">
         <CardHeader className="border-b border-gray-800">
-          <CardTitle className="text-cyan-400">Attack Vectors Analysis</CardTitle>
-          <CardDescription className="text-gray-400">Attacks vs blocked by vector</CardDescription>
+          <CardTitle className="text-cyan-400">CVSS Score Analysis</CardTitle>
+          <CardDescription className="text-gray-400">Average CVSS v2 and v3 Scores per IP Address</CardDescription>
         </CardHeader>
         <CardContent className="pt-6 relative">
-          {/* Futuristic background elements */}
           <div className="absolute inset-0 z-0">
             <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-cyan-500/5 to-transparent"></div>
             <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-cyan-500/0 via-cyan-500/20 to-cyan-500/0"></div>
@@ -119,13 +131,12 @@ function FuturisticCharts() {
                   labelStyle={{ color: "#fff" }}
                 />
                 <Legend />
-                <Bar dataKey="attacks" fill="#00FFFF" />
-                <Bar dataKey="blocked" fill="#00FF00" />
+                <Bar dataKey="cvssV2" fill="#00FFFF" />
+                <Bar dataKey="cvssV3" fill="#00FF00" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Scan lines effect */}
           <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden opacity-10">
             {Array.from({ length: 20 }).map((_, i) => (
               <div
@@ -142,4 +153,3 @@ function FuturisticCharts() {
 }
 
 export default FuturisticCharts
-

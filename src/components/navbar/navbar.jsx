@@ -60,6 +60,18 @@ export default function Navbar() {
             >
               Settings
             </Link>
+            <Link
+              to="/login"
+              className="relative text-sm font-medium text-gray-300 transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-cyan-400 after:transition-all hover:text-white hover:after:w-full"
+            >
+              login
+            </Link>
+            <Link
+              to="/register"
+              className="relative text-sm font-medium text-gray-300 transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:bg-cyan-400 after:transition-all hover:text-white hover:after:w-full"
+            >
+              Signup
+            </Link>
           </nav>
         </div>
 

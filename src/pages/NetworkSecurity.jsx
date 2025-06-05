@@ -1,24 +1,98 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { Network, Activity, Wifi, Shield } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import LoadingScreen from "../components/animations/LoadingScreen"
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts"
 
 function NetworkSecurity() {
-  const [isLoading, setIsLoading] = useState(true)
+  // State for API data
+  const [vulnerabilitiesByPort, setVulnerabilitiesByPort] = useState([])
+  const [protocolDistribution, setProtocolDistribution] = useState([])
+  const [riskFactorDistribution, setRiskFactorDistribution] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
+  // Mock summary metrics (replace with API call when endpoint is provided)
+  const summaryMetrics = {
+    networkStatus: "Protected",
+    trafficVolume: "1.2 TB/day",
+    activeConnections: 247,
+    firewallStatus: "Active",
+  }
+
+  // Fetch data from APIs
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [vulnResponse, protocolResponse, riskResponse] = await Promise.all([
+          fetch("http://127.0.0.1:8000/vulnerabilities-by-port"),
+          fetch("http://127.0.0.1:8000/protocol-distribution"),
+          fetch("http://127.0.0.1:8000/risk-factor-distribution"),
+        ])
 
-    return () => clearTimeout(timer)
+        if (!vulnResponse.ok || !protocolResponse.ok || !riskResponse.ok) {
+          throw new Error("Failed to fetch data from one or more APIs")
+        }
+
+        const vulnerabilities = await vulnResponse.json()
+        const protocols = await protocolResponse.json()
+        const risks = await riskResponse.json()
+
+        setVulnerabilitiesByPort(vulnerabilities)
+        setProtocolDistribution(protocols)
+        setRiskFactorDistribution(risks)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <LoadingScreen />
+  // Prepare data for stacked bar chart
+  const prepareRiskData = () => {
+    return riskFactorDistribution.map((item) => {
+      const result = { ip: item.ip }
+      item.risks
+        .filter((risk) => risk.risk !== null) // Exclude null risks
+        .forEach((risk) => {
+          result[risk.risk] = risk.count
+        })
+      return result
+    })
+  }
+
+  const riskData = prepareRiskData()
+  const riskLevels = ["Critical", "High", "Medium", "Low"]
+  const riskColors = {
+    Critical: "#ef4444",
+    High: "#f59e0b",
+    Medium: "#3b82f6",
+    Low: "#10b981",
+  }
+
+  // Colors for protocol distribution chart
+  const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444"]
+
+  // Loading and error states
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 bg-gray-950 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-6 bg-gray-950 flex items-center justify-center">
+        <div className="text-red-400 text-xl">Error: {error}</div>
+      </div>
+    )
   }
 
   return (
@@ -35,8 +109,14 @@ function NetworkSecurity() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-green-400">Protected</div>
-              <p className="text-sm text-gray-400">All systems operational</p>
+              <div
+                className={`text-xl font-bold ${
+                  summaryMetrics.networkStatus === "Protected" ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {summaryMetrics.networkStatus}
+              </div>
+              <p className="text-sm text-gray-400">Based on vulnerability scan</p>
             </CardContent>
           </Card>
 
@@ -48,7 +128,7 @@ function NetworkSecurity() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-white">1.2 TB/day</div>
+              <div className="text-xl font-bold text-white">{summaryMetrics.trafficVolume}</div>
               <p className="text-sm text-gray-400">+5% from last week</p>
             </CardContent>
           </Card>
@@ -61,7 +141,7 @@ function NetworkSecurity() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-white">247</div>
+              <div className="text-xl font-bold text-white">{summaryMetrics.activeConnections}</div>
               <p className="text-sm text-gray-400">23 authenticated users</p>
             </CardContent>
           </Card>
@@ -74,7 +154,7 @@ function NetworkSecurity() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl font-bold text-white">Active</div>
+              <div className="text-xl font-bold text-white">{summaryMetrics.firewallStatus}</div>
               <p className="text-sm text-gray-400">Last updated: 2h ago</p>
             </CardContent>
           </Card>
@@ -83,138 +163,107 @@ function NetworkSecurity() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden">
             <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Network Traffic</CardTitle>
-              <CardDescription className="text-gray-400">Real-time traffic monitoring</CardDescription>
+              <CardTitle className="text-white">Vulnerabilities by Port</CardTitle>
+              <CardDescription className="text-gray-400">Distribution of vulnerabilities across ports</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="aspect-[16/9] bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-gray-400 mb-2">Interactive network graph</p>
-                  <p className="text-xs text-gray-500">Showing real-time network traffic and connections</p>
-                </div>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={vulnerabilitiesByPort} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="port" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <YAxis stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1f2937",
+                        borderColor: "#374151",
+                        color: "#f9fafb",
+                      }}
+                      formatter={(value) => [`${value} vulnerabilities`, "Count"]}
+                    />
+                    <Legend wrapperStyle={{ color: "#9ca3af" }} />
+                    <Bar dataKey="count" name="Vulnerabilities" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden">
             <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Blocked Threats</CardTitle>
-              <CardDescription className="text-gray-400">Recent blocked network threats</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        IP Address
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Threat Type
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Time
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { id: 1, ip: "192.168.1.105", type: "Port Scan", time: "2 min ago", action: "Blocked" },
-                      { id: 2, ip: "45.33.32.156", type: "DDoS Attempt", time: "15 min ago", action: "Blocked" },
-                      { id: 3, ip: "103.235.46.39", type: "Malware", time: "1 hour ago", action: "Quarantined" },
-                      { id: 4, ip: "91.234.99.10", type: "Phishing", time: "3 hours ago", action: "Blocked" },
-                      { id: 5, ip: "185.176.43.87", type: "Brute Force", time: "5 hours ago", action: "Blocked" },
-                    ].map((threat) => (
-                      <tr key={threat.id} className="border-b border-gray-800 last:border-0">
-                        <td className="px-4 py-3 text-sm text-white">{threat.ip}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">{threat.type}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">{threat.time}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              threat.action === "Blocked"
-                                ? "bg-red-500/20 text-red-400"
-                                : "bg-yellow-500/20 text-yellow-400"
-                            }`}
-                          >
-                            {threat.action}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden lg:col-span-2">
-            <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Network Topology</CardTitle>
-              <CardDescription className="text-gray-400">Current network infrastructure</CardDescription>
+              <CardTitle className="text-white">Protocol Distribution</CardTitle>
+              <CardDescription className="text-gray-400">Network traffic by protocol</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="aspect-[16/9] bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-gray-400 mb-2">Interactive network topology map</p>
-                  <p className="text-xs text-gray-500">Showing all connected devices and infrastructure</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden">
-            <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Network Devices</CardTitle>
-              <CardDescription className="text-gray-400">Connected hardware status</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Device
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { id: 1, name: "Main Firewall", status: "Online" },
-                      { id: 2, name: "Core Router", status: "Online" },
-                      { id: 3, name: "Edge Switch", status: "Online" },
-                      { id: 4, name: "Backup Server", status: "Online" },
-                      { id: 5, name: "VPN Gateway", status: "Online" },
-                      { id: 6, name: "IDS System", status: "Online" },
-                    ].map((device) => (
-                      <tr key={device.id} className="border-b border-gray-800 last:border-0">
-                        <td className="px-4 py-3 text-sm text-white">{device.name}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className="flex items-center">
-                            <span className="h-2 w-2 rounded-full bg-green-400 mr-2"></span>
-                            <span className="text-green-400">{device.status}</span>
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={protocolDistribution}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis type="number" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <YAxis dataKey="protocol" type="category" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1f2937",
+                        borderColor: "#374151",
+                        color: "#f9fafb",
+                      }}
+                      formatter={(value) => [`${value} connections`, "Count"]}
+                    />
+                    <Legend wrapperStyle={{ color: "#9ca3af" }} />
+                    <Bar dataKey="count" name="Connections" fill="#8b5cf6">
+                      {protocolDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden mb-8">
+          <CardHeader className="border-b border-gray-800">
+            <CardTitle className="text-white">Risk Factor Distribution by IP</CardTitle>
+            <CardDescription className="text-gray-400">Vulnerability risk levels across IP addresses</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={riskData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="ip" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                  <YAxis stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      borderColor: "#374151",
+                      color: "#f9fafb",
+                    }}
+                    formatter={(value, name) => [`${value} vulnerabilities`, `${name} Risk`]}
+                  />
+                  <Legend wrapperStyle={{ color: "#9ca3af" }} />
+                  {riskLevels.map((risk, index) => (
+                    <Bar
+                      key={`risk-${index}`}
+                      dataKey={risk}
+                      stackId="a"
+                      name={risk}
+                      fill={riskColors[risk] || COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
 }
 
 export default NetworkSecurity
-

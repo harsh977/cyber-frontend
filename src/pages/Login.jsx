@@ -21,17 +21,42 @@ function Login({ onLogin }) {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+  
+    try {
+      const response = await fetch("http://127.0.0.1:8000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+  
+      if (!response.ok) {
+        throw new Error("Login failed")
+      }
+  
+      const data = await response.json()
+  
+      // Save token in localStorage
+      localStorage.setItem("access_token", data.access_token)
+  
+      // Optionally decode and save user info
+      const decoded = JSON.parse(atob(data.access_token.split(".")[1]))
+      localStorage.setItem("user", JSON.stringify(decoded))
+  
       onLogin()
-      navigate("/user-dashboard")
-    }, 1500)
+      navigate("/")
+    } catch (error) {
+      console.error("Login error:", error)
+      alert("Invalid credentials")
+    } finally {
+      setIsLoading(false)
+    }
   }
+  
 
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-gray-950">

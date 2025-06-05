@@ -25,9 +25,9 @@ function Dashboard() {
               Cybersecurity <span className="text-cyan-400">Analytics</span> Dashboard
             </h1>
             <p className="mb-6 max-w-2xl text-lg text-gray-300">
-              Visualize and analyze your security data with our advanced cyberpunk-inspired dashboard. Upload your Excel
-              data for real-time insights.
-            </p>
+  Enhance your cybersecurity posture with powerful, real-time visual insights. Upload your Excel data to analyze attack vectors, vulnerability scores, and system status — all within a futuristic analytics interface.
+</p>
+
             {fileName ? (
               <div className="flex items-center gap-2 rounded-lg bg-cyan-950/50 px-4 py-2 text-cyan-300">
                 <FileSpreadsheet className="h-5 w-5" />

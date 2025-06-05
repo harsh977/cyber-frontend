@@ -1,24 +1,103 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { Shield, AlertTriangle, Zap, BarChart2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import LoadingScreen from "../components/animations/LoadingScreen"
+import {
+  Bar,
+  BarChart,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts"
+
+// Mock data for vulnerability trend (kept as is per request)
+const mockVulnerabilityTrend = [
+  { date: "2023-01", count: 12 },
+  { date: "2023-02", count: 19 },
+  { date: "2023-03", count: 15 },
+  { date: "2023-04", count: 22 },
+  { date: "2023-05", count: 28 },
+  { date: "2023-06", count: 24 },
+  { date: "2023-07", count: 31 },
+  { date: "2023-08", count: 27 },
+  { date: "2023-09", count: 23 },
+  { date: "2023-10", count: 18 },
+  { date: "2023-11", count: 14 },
+  { date: "2023-12", count: 9 },
+]
 
 function ThreatAnalysis() {
-  const [isLoading, setIsLoading] = useState(true)
+  // State for API data
+  const [exploitAvailability, setExploitAvailability] = useState([])
+  const [topVulnerabilities, setTopVulnerabilities] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
+  // Fetch data from APIs
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 2000)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [exploitResponse, topVulnResponse] = await Promise.all([
+          fetch("http://127.0.0.1:8000/exploit-availability"),
+          fetch("http://127.0.0.1:8000/top-vulnerabilities"),
+        ])
 
-    return () => clearTimeout(timer)
+        if (!exploitResponse.ok || !topVulnResponse.ok) {
+          throw new Error("Failed to fetch data from one or more APIs")
+        }
+
+        const exploitData = await exploitResponse.json()
+        const topVulnData = await topVulnResponse.json()
+
+        setExploitAvailability(exploitData)
+        setTopVulnerabilities(topVulnData)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <LoadingScreen />
+  // Summary metrics calculated from fetched data
+  const summaryMetrics = {
+    critical: exploitAvailability.find((item) => item.status === "Exploit Available")?.count || 0,
+    medium: topVulnerabilities.reduce((sum, item) => sum + item.count, 0) - 
+            (exploitAvailability.find((item) => item.status === "Exploit Available")?.count || 0),
+    resolved: 27, // Fixed value for demo
+    score: 68, // Fixed value for demo
+  }
+
+  // Colors for charts
+  const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899"]
+
+  // Loading and error states
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 bg-gray-950 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-6 bg-gray-950 flex items-center justify-center">
+        <div className="text-red-400 text-xl">Error: {error}</div>
+      </div>
+    )
   }
 
   return (
@@ -35,8 +114,8 @@ function ThreatAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">3</div>
-              <p className="text-sm text-gray-400">+1 from yesterday</p>
+              <div className="text-3xl font-bold text-white">{summaryMetrics.critical}</div>
+              <p className="text-sm text-gray-400">Exploitable vulnerabilities</p>
             </CardContent>
           </Card>
 
@@ -48,8 +127,8 @@ function ThreatAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">12</div>
-              <p className="text-sm text-gray-400">-3 from yesterday</p>
+              <div className="text-3xl font-bold text-white">{summaryMetrics.medium}</div>
+              <p className="text-sm text-gray-400">Potential vulnerabilities</p>
             </CardContent>
           </Card>
 
@@ -61,12 +140,12 @@ function ThreatAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">27</div>
-              <p className="text-sm text-gray-400">+5 from yesterday</p>
+              <div className="text-3xl font-bold text-white">{summaryMetrics.resolved}</div>
+              <p className="text-sm text-gray-400">Patched vulnerabilities</p>
             </CardContent>
           </Card>
 
-          <Card className="border-gray-800 bg-gray-900/50 shadow-lg shadow-blue-500/5">
+          <Card className="border-gray-800 bg-gray-900/50 shadow-lg self-center shadow-blue-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-blue-400 flex items-center">
                 <BarChart2 className="mr-2 h-5 w-5" />
@@ -74,8 +153,10 @@ function ThreatAnalysis() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">68/100</div>
-              <p className="text-sm text-gray-400">Moderate risk level</p>
+              <div className="text-3xl font-bold text-white">{summaryMetrics.score}/100</div>
+              <p className="text-sm text-gray-400">
+                {summaryMetrics.score < 30 ? "Low" : summaryMetrics.score < 70 ? "Moderate" : "High"} risk level
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -83,102 +164,74 @@ function ThreatAnalysis() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden">
             <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Recent Threats</CardTitle>
-              <CardDescription className="text-gray-400">Last 7 days of detected threats</CardDescription>
+              <CardTitle className="text-white">Vulnerability Trend</CardTitle>
+              <CardDescription className="text-gray-400">Monthly vulnerability count</CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Threat
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Severity
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { id: 1, name: "Malware Detected", type: "Trojan", severity: "Critical", status: "Active" },
-                      {
-                        id: 2,
-                        name: "Suspicious Login",
-                        type: "Brute Force",
-                        severity: "Medium",
-                        status: "Investigating",
-                      },
-                      {
-                        id: 3,
-                        name: "Data Exfiltration",
-                        type: "Data Breach",
-                        severity: "Critical",
-                        status: "Contained",
-                      },
-                      {
-                        id: 4,
-                        name: "Phishing Attempt",
-                        type: "Social Engineering",
-                        severity: "Medium",
-                        status: "Resolved",
-                      },
-                      { id: 5, name: "Ransomware", type: "Encryption", severity: "Critical", status: "Active" },
-                    ].map((threat) => (
-                      <tr key={threat.id} className="border-b border-gray-800 last:border-0">
-                        <td className="px-4 py-3 text-sm text-white">{threat.name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">{threat.type}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              threat.severity === "Critical"
-                                ? "bg-red-500/20 text-red-400"
-                                : "bg-yellow-500/20 text-yellow-400"
-                            }`}
-                          >
-                            {threat.severity}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs ${
-                              threat.status === "Active"
-                                ? "bg-red-500/20 text-red-400"
-                                : threat.status === "Investigating"
-                                  ? "bg-blue-500/20 text-blue-400"
-                                  : threat.status === "Contained"
-                                    ? "bg-yellow-500/20 text-yellow-400"
-                                    : "bg-green-500/20 text-green-400"
-                            }`}
-                          >
-                            {threat.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <CardContent className="p-6">
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={mockVulnerabilityTrend} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <YAxis stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1f2937",
+                        borderColor: "#374151",
+                        color: "#f9fafb",
+                      }}
+                      labelStyle={{ color: "#f9fafb" }}
+                    />
+                    <Legend wrapperStyle={{ color: "#9ca3af" }} />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      name="Vulnerabilities"
+                      stroke="#3b82f6"
+                      activeDot={{ r: 8 }}
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden">
             <CardHeader className="border-b border-gray-800">
-              <CardTitle className="text-white">Threat Map</CardTitle>
-              <CardDescription className="text-gray-400">Geographic distribution of threats</CardDescription>
+              <CardTitle className="text-white">Exploit Availability</CardTitle>
+              <CardDescription className="text-gray-400">Distribution of exploit status</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="aspect-[16/9] bg-gray-800 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-gray-400 mb-2">Interactive threat map</p>
-                  <p className="text-xs text-gray-500">Showing global threat activity in real-time</p>
-                </div>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={exploitAvailability}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="status"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {exploitAvailability.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#1f2937",
+                        borderColor: "#374151",
+                        color: "#f9fafb",
+                      }}
+                      formatter={(value, name) => [`${value} vulnerabilities`, name]}
+                    />
+                    <Legend formatter={(value) => <span style={{ color: "#9ca3af" }}>{value}</span>} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -186,37 +239,35 @@ function ThreatAnalysis() {
 
         <Card className="border-gray-800 bg-gray-900/50 shadow-lg overflow-hidden mb-8">
           <CardHeader className="border-b border-gray-800">
-            <CardTitle className="text-white">Threat Intelligence</CardTitle>
-            <CardDescription className="text-gray-400">Analysis and recommendations</CardDescription>
+            <CardTitle className="text-white">Top Vulnerabilities</CardTitle>
+            <CardDescription className="text-gray-400">Most common vulnerability types</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="rounded-lg border border-gray-800 p-4">
-                <h3 className="text-lg font-medium text-cyan-400 mb-2">Ransomware Protection</h3>
-                <p className="text-sm text-gray-400 mb-3">
-                  Recent intelligence indicates an increase in ransomware attacks targeting your industry. We recommend
-                  implementing the following measures:
-                </p>
-                <ul className="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                  <li>Update all systems to the latest security patches</li>
-                  <li>Implement offline backup solutions</li>
-                  <li>Conduct employee training on phishing awareness</li>
-                  <li>Enable multi-factor authentication across all systems</li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg border border-gray-800 p-4">
-                <h3 className="text-lg font-medium text-purple-400 mb-2">Data Breach Prevention</h3>
-                <p className="text-sm text-gray-400 mb-3">
-                  Your organization's data protection measures need improvement. Consider implementing:
-                </p>
-                <ul className="list-disc pl-5 text-sm text-gray-400 space-y-1">
-                  <li>Data encryption for sensitive information</li>
-                  <li>Regular security audits and penetration testing</li>
-                  <li>Data loss prevention (DLP) solutions</li>
-                  <li>Strict access control policies</li>
-                </ul>
-              </div>
+            <div className="h-[450px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topVulnerabilities} margin={{ top: 5, right: 30, left: 20, bottom: 100 } }>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="plugin"
+                    stroke="#9ca3af"
+                    tick={{ fill: "#9ca3af" }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
+                      borderColor: "#374151",
+                      color: "#f9fafb",
+                    }}
+                    formatter={(value) => [`${value} instances`, "Count"]}
+                  />
+                  <Legend wrapperStyle={{ color: "#9ca3af" }} />
+                  <Bar dataKey="count" name="Occurrences" fill="#8b5cf6" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -226,4 +277,3 @@ function ThreatAnalysis() {
 }
 
 export default ThreatAnalysis
-

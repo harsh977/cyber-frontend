@@ -1,89 +1,151 @@
-"use client"
-
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Eye, EyeOff, Lock, Mail, User, Shield } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, User, Building } from 'lucide-react'
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
+import axios from "axios"
 
-function Register({ onRegister }) {
+function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    first_name: "",
+    last_name: "",
+    role: "Viewer",
+    lab: "Lab1",
+    business_unit: "Server",
+    dashboard_view: "Summary",
+    notification_preferences: ["Email"],
+    tfa_enabled: true
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const navigate = useNavigate()
+
+  const roles = ["Admin", "Manager", "Researcher", "Viewer"]
+  const labs = ["Lab1", "Lab2", "Lab3"]
+  const businessUnits = [
+    "Server", 
+    "Hybrid Cloud", 
+    "Intelligent Edge", 
+    "Financial Services", 
+    "Corporate Investments & Other", 
+    "Compute, High Performance Computing & AI", 
+    "Software", 
+    "Storage"
+  ]
+  const notificationPreferences = ["Email", "SMS", "App"]
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleNotificationChange = (preference) => {
+    setFormData((prev) => {
+      const currentPreferences = [...prev.notification_preferences]
+      if (currentPreferences.includes(preference)) {
+        return {
+          ...prev,
+          notification_preferences: currentPreferences.filter(p => p !== preference)
+        }
+      } else {
+        return {
+          ...prev,
+          notification_preferences: [...currentPreferences, preference]
+        }
+      }
+    })
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!")
-      return
-    }
-
     setIsLoading(true)
+    setError("")
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await axios.post("http://127.0.0.1:8000/auth/signup", formData)
+      alert("Registration successful! Please login.")
+      navigate("/login")
+    } catch (err) {
+      setError(err.response?.data?.detail || "Registration failed. Please try again.")
+    } finally {
       setIsLoading(false)
-      onRegister()
-      navigate("/user-dashboard")
-    }, 1500)
+    }
   }
 
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-gray-950">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-cyan-500/10 to-blue-500/10 blur-3xl pointer-events-none"></div>
 
         <Card className="border-gray-800 bg-gray-900/80 backdrop-blur-sm shadow-xl relative overflow-hidden">
-          {/* Animated background elements */}
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
 
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600">
-              <Shield className="h-8 w-8 text-white" />
+              <User className="h-8 w-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-white">Create an Account</CardTitle>
-            <CardDescription className="text-gray-400">Enter your information to create your account</CardDescription>
+            <CardDescription className="text-gray-400">Enter your information to register</CardDescription>
           </CardHeader>
 
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md text-red-200 text-sm">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <User className="h-5 w-5 text-gray-500" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="first_name" className="text-sm font-medium text-gray-400">First Name</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <User className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <Input
+                      id="first_name"
+                      type="text"
+                      name="first_name"
+                      placeholder="First Name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      required
+                      className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500"
+                    />
                   </div>
-                  <Input
-                    type="text"
-                    name="name"
-                    placeholder="Full Name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500"
-                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="last_name" className="text-sm font-medium text-gray-400">Last Name</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <User className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <Input
+                      id="last_name"
+                      type="text"
+                      name="last_name"
+                      placeholder="Last Name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      required
+                      className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500"
+                    />
+                  </div>
                 </div>
               </div>
-
               <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-gray-400">Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <Mail className="h-5 w-5 text-gray-500" />
                   </div>
                   <Input
+                    id="email"
                     type="email"
                     name="email"
                     placeholder="Email"
@@ -94,13 +156,14 @@ function Register({ onRegister }) {
                   />
                 </div>
               </div>
-
               <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-gray-400">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-500" />
                   </div>
                   <Input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Password"
@@ -118,39 +181,103 @@ function Register({ onRegister }) {
                   </button>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-500" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="role" className="text-sm font-medium text-gray-400">Role</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <User className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <select
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      required
+                      className="pl-10 w-full bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 rounded-md py-2"
+                    >
+                      {roles.map(role => (
+                        <option key={role} value={role}>{role}</option>
+                      ))}
+                    </select>
                   </div>
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    className="pl-10 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500"
-                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="lab" className="text-sm font-medium text-gray-400">Lab</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      {/* Use a suitable icon if available */}
+                      <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 3v2a2 2 0 002 2h2v2a2 2 0 002 2h2v2a2 2 0 002 2h2v2a2 2 0 002 2h2v2a2 2 0 002 2v2"></path></svg>
+                    </div>
+                    <select
+                      id="lab"
+                      name="lab"
+                      value={formData.lab}
+                      onChange={handleChange}
+                      required
+                      className="pl-10 w-full bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 rounded-md py-2"
+                    >
+                      {labs.map(lab => (
+                        <option key={lab} value={lab}>{lab}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-
+              <div className="space-y-2">
+                <label htmlFor="business_unit" className="text-sm font-medium text-gray-400">Business Unit</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-500" />
+                  </div>
+                  <select
+                    id="business_unit"
+                    name="business_unit"
+                    value={formData.business_unit}
+                    onChange={handleChange}
+                    required
+                    className="pl-10 w-full bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 rounded-md py-2"
+                  >
+                    {businessUnits.map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-400">Notification Preferences</label>
+                <div className="flex flex-wrap gap-4">
+                  {notificationPreferences.map(preference => (
+                    <div key={preference} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`notification-${preference}`}
+                        checked={formData.notification_preferences.includes(preference)}
+                        onChange={() => handleNotificationChange(preference)}
+                        className="h-4 w-4 rounded border-gray-700 bg-gray-800 text-cyan-500 focus:ring-cyan-500"
+                      />
+                      <label htmlFor={`notification-${preference}`} className="text-sm text-gray-400">
+                        {preference}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  id="terms"
-                  required
+                  id="tfa_enabled"
+                  checked={formData.tfa_enabled}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tfa_enabled: e.target.checked }))}
                   className="h-4 w-4 rounded border-gray-700 bg-gray-800 text-cyan-500 focus:ring-cyan-500"
                 />
-                <label htmlFor="terms" className="text-sm text-gray-400">
-                  I agree to the{" "}
-                  <a href="#" className="text-cyan-400 hover:text-cyan-300">
-                    Terms and Conditions
-                  </a>
+                <label htmlFor="tfa_enabled" className="text-sm text-gray-400">
+                  Enable Two-Factor Authentication
                 </label>
               </div>
-
+              <div className="flex items-center space-x-2">
+                
+              </div>
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -179,7 +306,7 @@ function Register({ onRegister }) {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Creating account...
+                      Registering...
                     </>
                   ) : (
                     "Sign Up"
@@ -189,44 +316,7 @@ function Register({ onRegister }) {
               </Button>
             </form>
           </CardContent>
-
           <CardFooter className="flex flex-col space-y-4">
-            <div className="relative flex items-center">
-              <div className="flex-grow border-t border-gray-700"></div>
-              <span className="mx-4 flex-shrink text-xs text-gray-500">OR CONTINUE WITH</span>
-              <div className="flex-grow border-t border-gray-700"></div>
-            </div>
-
-            <div className="flex space-x-2">
-              <Button variant="outline" className="w-full bg-gray-800/50 border-gray-700 text-white hover:bg-gray-700">
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Google
-              </Button>
-              <Button variant="outline" className="w-full bg-gray-800/50 border-gray-700 text-white hover:bg-gray-700">
-                <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                </svg>
-                Facebook
-              </Button>
-            </div>
-
             <p className="text-center text-sm text-gray-400">
               Already have an account?{" "}
               <Link to="/login" className="text-cyan-400 hover:text-cyan-300">
@@ -234,8 +324,6 @@ function Register({ onRegister }) {
               </Link>
             </p>
           </CardFooter>
-
-          {/* Scan line effect */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute left-0 right-0 h-[1px] bg-cyan-400/20 blur-[1px] animate-scanline"></div>
           </div>
@@ -246,4 +334,3 @@ function Register({ onRegister }) {
 }
 
 export default Register
-
