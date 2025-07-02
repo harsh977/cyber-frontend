@@ -5,7 +5,7 @@ import ThreatAnalysis from "./pages/ThreatAnalysis"
 import NetworkSecurity from "./pages/NetworkSecurity"
 import DataProtection from "./pages/DataProtection"
 import AccessControl from "./pages/AccessControl"
-import UserManagement from "./pages/UserManagement"
+import AIModels from "./pages/AIModels"
 import Reports from "./pages/Reports"
 import Analytics from "./pages/Analytics"
 import Settings from "./pages/Settings"
@@ -14,7 +14,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import UserDashboard from "./pages/UserDashboard"
 import MessageSent from "./pages/MessageSent"
-
+import Results from "./pages/Results"
 function App() {
   return (
     <Routes>
@@ -30,10 +30,11 @@ function App() {
         <Route path="network-security" element={<NetworkSecurity />} />
         <Route path="data-protection" element={<DataProtection />} />
         <Route path="access-control" element={<AccessControl />} />
-        <Route path="user-management" element={<UserManagement />} />
+        <Route path="ai-models" element={<AIModels />} />
         <Route path="reports" element={<Reports />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="results" element={<Results />} />
       </Route>
     </Routes>
   )

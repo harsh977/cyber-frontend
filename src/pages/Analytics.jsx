@@ -1,6 +1,5 @@
-import { BarChart, LineChart, PieChart } from "recharts"
+import { BarChart, LineChart, PieChart, Bar, Line, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../components/ui/chart"
 
 function Analytics() {
   // Sample data for analytics
@@ -40,32 +39,32 @@ function Analytics() {
               <CardTitle className="text-cyan-400">Security Incident Trends</CardTitle>
               <CardDescription className="text-gray-400">Monthly incident tracking</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <ChartContainer
-                config={{
-                  incidents: {
-                    label: "Incidents",
-                    color: "hsl(180, 100%, 50%)",
-                  },
-                  resolved: {
-                    label: "Resolved",
-                    color: "hsl(120, 100%, 50%)",
-                  },
-                }}
-                className="aspect-[4/3]"
-              >
-                <LineChart
-                  data={securityTrendData}
-                  margin={{
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    left: 20,
-                  }}
-                >
-                  <ChartTooltip content={<ChartTooltipContent />} />
+            <CardContent className="pt-6 h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={securityTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="month" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151' }}
+                    itemStyle={{ color: '#E5E7EB' }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="incidents"
+                    stroke="#00FFFF"
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="resolved"
+                    stroke="#00FF00"
+                    strokeWidth={2}
+                  />
                 </LineChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
@@ -74,28 +73,33 @@ function Analytics() {
               <CardTitle className="text-purple-400">Threat Sources</CardTitle>
               <CardDescription className="text-gray-400">Origin of security threats</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <ChartContainer
-                config={{
-                  value: {
-                    label: "Percentage",
-                    color: "hsl(280, 100%, 70%)",
-                  },
-                }}
-                className="aspect-[4/3]"
-              >
-                <PieChart
-                  data={threatSourceData}
-                  margin={{
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    left: 20,
-                  }}
-                >
-                  <ChartTooltip content={<ChartTooltipContent />} />
+            <CardContent className="pt-6 h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={threatSourceData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    nameKey="name"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {threatSourceData.map((entry, index) => (
+                      <Pie 
+                        key={`cell-${index}`} 
+                        fill={index === 0 ? '#9333ea' : index === 1 ? '#a855f7' : '#c084fc'}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151' }}
+                    itemStyle={{ color: '#E5E7EB' }}
+                  />
                 </PieChart>
-              </ChartContainer>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
@@ -105,28 +109,25 @@ function Analytics() {
             <CardTitle className="text-blue-400">Vulnerability Distribution</CardTitle>
             <CardDescription className="text-gray-400">Vulnerabilities by category</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <ChartContainer
-              config={{
-                count: {
-                  label: "Count",
-                  color: "hsl(220, 100%, 60%)",
-                },
-              }}
-              className="aspect-[21/9]"
-            >
-              <BarChart
-                data={vulnerabilityData}
-                margin={{
-                  top: 20,
-                  right: 20,
-                  bottom: 20,
-                  left: 20,
-                }}
-              >
-                <ChartTooltip content={<ChartTooltipContent />} />
+          <CardContent className="pt-6 h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={vulnerabilityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="category" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151' }}
+                  itemStyle={{ color: '#E5E7EB' }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="count"
+                  name="Vulnerabilities"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
-            </ChartContainer>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -135,4 +136,3 @@ function Analytics() {
 }
 
 export default Analytics
-

@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom"
-import { BarChart2, Database, FileText, Home, Lock, Network, Settings, Shield, Users } from "lucide-react"
-
+import { BarChart2, Database, FileText, Home, Lock, Network, Settings, Shield, Users, Brain } from "lucide-react"
 import { cn } from "../../utils/cn"
 
 function Sidebar() {
@@ -30,6 +29,12 @@ function Sidebar() {
       icon: Database,
       href: "/data-protection",
       isActive: location.pathname === "/data-protection",
+    },
+    {
+      title: "NLP Models",
+      icon: Brain,
+      href: "/ai-models",
+      isActive: location.pathname === "/nlp-models",
     },
     {
       title: "Access Control",
@@ -115,4 +120,3 @@ function Sidebar() {
 }
 
 export default Sidebar
-

@@ -1,19 +1,24 @@
-"use client"
-
 import { useState } from "react"
 import { Send } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
+import axios from "axios"
 
-function FixedUploadBar({ onFileUpload }) {
+function FixedUploadBar() {
   const [message, setMessage] = useState("")
   const navigate = useNavigate()
 
-  const handleSendClick = () => {
+  const handleSendClick = async () => {
     if (message.trim()) {
-      // Navigate to the message sent page with loading animation
-      navigate("/message-sent")
+      
+
+        navigate("/message-sent", { 
+          state: { 
+            message: message, 
+          } 
+        });
+      
     }
   }
 
@@ -42,4 +47,3 @@ function FixedUploadBar({ onFileUpload }) {
 }
 
 export default FixedUploadBar
-

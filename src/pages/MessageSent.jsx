@@ -1,27 +1,36 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useEffect } from "react"
+import { useNavigate, useLocation } from "react-router-dom"
 import { CheckCircle, Send } from "lucide-react"
 
 function MessageSent() {
-  const [countdown, setCountdown] = useState(5)
   const navigate = useNavigate()
+  const location = useLocation()
+  const message = location.state?.message
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate("/")
-    }, 5000)
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => prev - 1)
-    }, 1000)
-
-    return () => {
-      clearTimeout(timer)
-      clearInterval(interval)
+    async function sendToModel() {
+      try {
+        const response = await fetch("http://127.0.0.1:8001/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: message }),
+        })
+        const data = await response.json()
+        navigate("/results", { state: { message, response: data } })
+      } catch (error) {
+        console.error("Error sending to model:", error)
+        navigate("/results", { state: { message, response: null } })
+      }
     }
-  }, [navigate])
+
+    if (message) {
+      sendToModel()
+    } else {
+      navigate("/")
+    }
+  }, [message, navigate])
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gray-950">
@@ -32,12 +41,12 @@ function MessageSent() {
           <div className="mb-6 flex h-24 w-24 items-center justify-center">
             <div className="absolute inset-0 animate-ping rounded-full bg-green-500/20"></div>
             <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gray-800">
-              <CheckCircle className="h-12 w-12 text-green-400" />
+              <CheckCircle className="h-12 w-12 text-green-400 animate-spin" />
             </div>
           </div>
 
-          <h2 className="mb-2 text-2xl font-bold text-white">Message Sent Successfully!</h2>
-          <p className="mb-6 text-center text-gray-400">Your message has been sent and will be processed shortly.</p>
+          <h2 className="mb-2 text-2xl font-bold text-white">Sending your message...</h2>
+          <p className="mb-6 text-center text-gray-400">Please wait while we process it.</p>
 
           <div className="mb-6 flex items-center justify-center space-x-2">
             <div className="h-1 w-3 animate-pulse rounded-full bg-cyan-400"></div>
@@ -48,11 +57,10 @@ function MessageSent() {
           </div>
 
           <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
-            <Send className="h-4 w-4" />
-            <span>Redirecting in {countdown} seconds...</span>
+            <Send className="h-4 w-4 animate-bounce" />
+            <span>Waiting for model response...</span>
           </div>
 
-          {/* Animated background elements */}
           <div className="absolute -top-4 left-0 right-0 h-2 bg-gradient-to-r from-cyan-500/0 via-cyan-500/30 to-cyan-500/0 blur-sm"></div>
           <div className="absolute -bottom-4 left-0 right-0 h-2 bg-gradient-to-r from-purple-500/0 via-purple-500/30 to-purple-500/0 blur-sm"></div>
         </div>
@@ -62,4 +70,3 @@ function MessageSent() {
 }
 
 export default MessageSent
-
